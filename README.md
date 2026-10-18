@@ -993,14 +993,11 @@ Nomes de contas demo não comprovam autoria. Preencha com as informações ofici
 
 | Informação               | Preenchimento                                          |
 | ------------------------ | ------------------------------------------------------ |
-| Integrantes              | **[PREENCHER: nomes completos]**                       |
-| Curso                    | **[PREENCHER: curso]**                                 |
-| Instituição              | **[PREENCHER: instituição]**                           |
-| Disciplina               | **[PREENCHER: disciplina]**                            |
-| Professor(a) responsável | **[PREENCHER: nome]**                                  |
-| Turma/período            | **[PREENCHER: turma e período]**                       |
-| Ano de desenvolvimento   | **2026**, conforme registros do projeto                |
-| Licença                  | **Não definida; preencher após decisão dos titulares** |
+| Integrantes e RA         | **Lucas Brandão Viana - 12411248**; **João Gabriel de Freitas Faria - 1241106**; **Luca Barbosa Rodrigues- 1252211620889**                    |
+| Instituição              | **UniBH**                                              |
+| Disciplina               | **Usabilidade, desenvolvimento web, mobile e jogos**   |
+| Professor(a) responsável | **Daniel Henrique Matos De Paiva**                     |
+| Ano de desenvolvimento   | **2026**                                               |
 
 Complementos: [roteiro acadêmico](docs/APRESENTACAO.md), [arquitetura](docs/ARQUITETURA.md) e [relatório histórico de testes](docs/TESTES.md).
 
