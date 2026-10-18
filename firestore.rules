@@ -1,0 +1,156 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function admin() { return signedIn() && request.auth.token.get('admin', false) == true; }
+    function owner(userId) { return signedIn() && request.auth.uid == userId; }
+    function text(value, max) { return value is string && value.size() <= max; }
+    function nonempty(value, max) { return text(value, max) && value.size() > 0; }
+    function newlyCreated(d) { return d.createdAt == request.time; }
+    function ownRead() { return admin() || owner(resource.data.userId); }
+    function pointPath(id) { return /databases/$(database)/documents/collectionPoints/$(id); }
+    function wastePath(id) { return /databases/$(database)/documents/wastes/$(id); }
+    function reviewPath(pointId) { return /databases/$(database)/documents/reviews/$(request.auth.uid + '_' + pointId); }
+    function activePoint(id) { return get(pointPath(id)).data.active == true; }
+    function validDisposalDate(value) {
+      let parts = value.split('-');
+      let year = int(parts[0]);
+      let month = int(parts[1]);
+      let day = int(parts[2]);
+      let date = timestamp.date(year, month, day);
+      return year >= 2000 && date.year() == year && date.month() == month && date.day() == day
+        && date <= (request.time - duration.value(3, 'h')).date();
+    }
+    function validProfile(d) {
+      return d.keys().hasOnly(['name','email','role','photoURL','createdAt'])
+        && nonempty(d.name, 100) && nonempty(d.email, 254) && text(d.photoURL, 2000)
+        && d.role in ['user', 'admin'] && d.createdAt is timestamp;
+    }
+    match /users/{id} {
+      allow read: if admin() || owner(id);
+      allow create: if owner(id) && validProfile(request.resource.data)
+        && request.resource.data.role == 'user'
+        && request.resource.data.email == request.auth.token.email
+        && newlyCreated(request.resource.data);
+      allow update: if owner(id) && validProfile(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name','photoURL']);
+      allow delete: if false;
+    }
+    function validWaste(d) {
+      return d.keys().hasOnly(['name','normalizedName','synonyms','category','description','recyclable','dangerous','commonTrash','disposalInstructions','preparation','environmentalImpact','icon','image','active','createdAt','updatedAt'])
+        && nonempty(d.name,200) && nonempty(d.normalizedName,200)
+        && d.category in ['Eletrônicos','Papel','Plástico','Vidro','Metal','Pilhas e baterias','Óleo','Medicamentos','Outros']
+        && d.synonyms is list && d.synonyms.size() <= 50
+        && nonempty(d.description,2000) && nonempty(d.disposalInstructions,4000)
+        && text(d.preparation,4000) && text(d.environmentalImpact,4000)
+        && text(d.icon,100) && text(d.image,2000)
+        && d.recyclable is bool && d.dangerous is bool && d.commonTrash is bool && d.active is bool
+        && d.createdAt is timestamp && d.updatedAt == request.time;
+    }
+    match /wastes/{id} {
+      allow read: if admin() || resource.data.active == true;
+      allow create: if admin() && validWaste(request.resource.data) && newlyCreated(request.resource.data);
+      allow update: if admin() && validWaste(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if false;
+    }
+    function addressFields(d) {
+      return nonempty(d.name,200) && nonempty(d.address,300) && text(d.number,30)
+        && text(d.district,150) && nonempty(d.city,150) && d.state is string && d.state.matches('^[A-Z]{2}$')
+        && d.zipCode is string && d.zipCode.matches('^[0-9]{5}-?[0-9]{3}$')
+        && text(d.phone,50) && text(d.openingHours,500)
+        && d.acceptedWasteIds is list && d.acceptedWasteIds.size() > 0 && d.acceptedWasteIds.size() <= 100;
+    }
+    function validPoint(d) {
+      return d.keys().hasOnly(['name','description','address','number','district','city','state','zipCode','lat','lng','phone','website','openingHours','acceptedWasteIds','verified','active','rating','totalReviews','demo','createdAt','updatedAt'])
+        && addressFields(d) && text(d.description,2000) && text(d.website,2000)
+        && d.lat is number && d.lat >= -90 && d.lat <= 90 && d.lng is number && d.lng >= -180 && d.lng <= 180
+        && d.verified is bool && d.active is bool && d.demo is bool
+        && d.rating is number && d.rating >= 0 && d.rating <= 5
+        && d.totalReviews is int && d.totalReviews >= 0
+        && d.createdAt is timestamp && d.updatedAt == request.time;
+    }
+    function reviewAggregateUpdate(id) {
+      let next = request.resource.data;
+      let review = getAfter(reviewPath(id)).data;
+      return signedIn() && resource.data.active == true
+        && !exists(reviewPath(id))
+        && review.userId == request.auth.uid && review.pointId == id
+        && review.createdAt == request.time && review.confirmed == true
+        && review.rating is int && review.rating >= 1 && review.rating <= 5
+        && next.diff(resource.data).affectedKeys().hasOnly(['rating','totalReviews','updatedAt'])
+        && next.totalReviews == resource.data.totalReviews + 1
+        && next.rating == (resource.data.rating * resource.data.totalReviews + review.rating) / next.totalReviews
+        && next.updatedAt == request.time;
+    }
+    match /collectionPoints/{id} {
+      allow read: if admin() || resource.data.active == true;
+      allow create: if admin() && validPoint(request.resource.data)
+        && newlyCreated(request.resource.data) && request.resource.data.rating == 0 && request.resource.data.totalReviews == 0;
+      allow update: if (admin() && validPoint(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.rating == resource.data.rating && request.resource.data.totalReviews == resource.data.totalReviews)
+        || reviewAggregateUpdate(id);
+      allow delete: if false;
+    }
+    match /suggestions/{id} {
+      allow read: if ownRead();
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['userId','name','address','number','district','city','state','zipCode','acceptedWasteIds','openingHours','phone','observation','status','createdAt'])
+        && owner(request.resource.data.userId) && addressFields(request.resource.data)
+        && text(request.resource.data.observation,2000)
+        && request.resource.data.status == 'PENDENTE' && newlyCreated(request.resource.data);
+      allow update: if admin() && resource.data.status == 'PENDENTE'
+        && request.resource.data.reviewedAt == request.time
+        && ((request.resource.data.status == 'APROVADO'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','pointId','reviewedAt'])
+          && request.resource.data.pointId == 'suggestion_' + id
+          && !exists(pointPath('suggestion_' + id))
+          && getAfter(pointPath('suggestion_' + id)).data.active == true
+          && getAfter(pointPath('suggestion_' + id)).data.createdAt == request.time)
+          || (request.resource.data.status == 'REJEITADO'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','rejectionReason','reviewedAt'])
+          && nonempty(request.resource.data.rejectionReason,1000)));
+      allow delete: if false;
+    }
+    match /disposals/{id} {
+      allow read: if ownRead();
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['userId','wasteId','collectionPointId','quantity','date','createdAt'])
+        && owner(request.resource.data.userId) && newlyCreated(request.resource.data)
+        && request.resource.data.quantity is int && request.resource.data.quantity > 0 && request.resource.data.quantity <= 100000
+        && request.resource.data.date is string && request.resource.data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && validDisposalDate(request.resource.data.date)
+        && nonempty(request.resource.data.wasteId,200) && nonempty(request.resource.data.collectionPointId,200)
+        && get(wastePath(request.resource.data.wasteId)).data.active == true
+        && activePoint(request.resource.data.collectionPointId)
+        && request.resource.data.wasteId in get(pointPath(request.resource.data.collectionPointId)).data.acceptedWasteIds;
+      allow update, delete: if false;
+    }
+    match /reviews/{id} {
+      // A transaction must be able to check that its first review does not exist.
+      allow get: if signedIn() && (!exists(/databases/$(database)/documents/reviews/$(id)) || ownRead());
+      allow list: if ownRead();
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['userId','pointId','rating','confirmed','comment','createdAt'])
+        && owner(request.resource.data.userId) && newlyCreated(request.resource.data)
+        && id == request.auth.uid + '_' + request.resource.data.pointId
+        && request.resource.data.rating is int && request.resource.data.rating >= 1 && request.resource.data.rating <= 5
+        && request.resource.data.confirmed == true && text(request.resource.data.comment,1000)
+        && activePoint(request.resource.data.pointId)
+        && getAfter(pointPath(request.resource.data.pointId)).data.totalReviews == get(pointPath(request.resource.data.pointId)).data.totalReviews + 1
+        && getAfter(pointPath(request.resource.data.pointId)).data.rating == (get(pointPath(request.resource.data.pointId)).data.rating * get(pointPath(request.resource.data.pointId)).data.totalReviews + request.resource.data.rating) / (get(pointPath(request.resource.data.pointId)).data.totalReviews + 1);
+      allow update, delete: if false;
+    }
+    match /searchLogs/{id} {
+      allow read: if admin();
+      allow create: if request.resource.data.keys().hasOnly(['term','wasteId','userId','createdAt'])
+        && nonempty(request.resource.data.term,120)
+        && ((!signedIn() && request.resource.data.userId == null) || owner(request.resource.data.userId))
+        && (request.resource.data.wasteId == null || get(wastePath(request.resource.data.wasteId)).data.active == true)
+        && newlyCreated(request.resource.data);
+      allow update, delete: if false;
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}
