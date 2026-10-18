@@ -932,20 +932,6 @@ Nenhuma URL pública oficial foi confirmada nesta revisão. Pasta `.firebase` e 
 
 Antes de operação pública, defina curadoria, prevenção de abuso, retenção, atendimento aos titulares, monitoramento e orçamento. **Não há declaração de conformidade integral com LGPD nem auditoria formal de segurança/acessibilidade.**
 
-<a id="limitacoes"></a>
-
-## Limitações atuais
-
-- Pontos iniciais fictícios; veracidade, horários e disponibilidade exigem curadoria.
-- Orientações gerais, sem validação automática de regras municipais ou condições de recebimento.
-- Sugestões recusam números/pontuação em nomes/logradouros e imóvel `S/N`; horários não cobrem turnos, dias ou madrugada. Administração mantém entrada mais ampla.
-- Sem migração demo → Firebase nem importação de bases oficiais.
-- Dados/relatórios calculados no cliente, sem paginação ou agregações persistidas; escala maior exige revisão de consultas, memória e custos.
-- Sem sincronização contínua das coleções, garantia offline, comprovação de descarte ou medição ambiental.
-- Sem upload, login social, exclusão de conta, reconhecimento por imagem ou notificações.
-- Integrações dependem de disponibilidade, configuração, cotas e custos dos provedores; mapa usa Map ID de teste.
-- Licença não definida. Publicação, e-mail real, dados reais e integrações remotas não foram verificados nesta tarefa.
-
 <a id="melhorias"></a>
 
 ## Melhorias futuras
