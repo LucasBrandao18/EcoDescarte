@@ -993,7 +993,7 @@ Nomes de contas demo não comprovam autoria. Preencha com as informações ofici
 
 | Informação               | Preenchimento                                          |
 | ------------------------ | ------------------------------------------------------ |
-| Integrantes e RA         | **Lucas Brandão Viana - 12411248**; **João Gabriel de Freitas Faria - 12411106**; **Luca Barbosa Rodrigues - 1252211620889**; **Lucas Ribeiro Moreira - 123112959**                    |
+| Integrantes e RA         | **Lucas Brandão Viana - 12411248**; **João Gabriel de Freitas Faria - 12411106**; **Luca Barbosa Rodrigues - 1252211620889**; **Lucas Ribeiro Moreira - 123112959**; **João Paulo Leal Silveira - 1261945835**                    |
 | Instituição              | **UniBH**                                              |
 | Disciplina               | **Usabilidade, desenvolvimento web, mobile e jogos**   |
 | Professor(a) responsável | **Daniel Henrique Matos De Paiva**                     |
