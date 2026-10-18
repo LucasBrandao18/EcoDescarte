@@ -13,7 +13,21 @@ O percurso central é descobrir como preparar um material, encontrar um ponto co
 
 > A base inicial contém **22 resíduos e 6 pontos de coleta fictícios**, identificados como demonstração. Não se desloque até esses marcadores. Uma operação real exige curadoria dos estabelecimentos e configuração dos serviços externos.
 
-Documentação revisada em **17 de outubro de 2026**, a partir do código e das configurações locais. Integração implementada e configuração de publicação não comprovam funcionamento ou deploy remoto. Não há licença definida no repositório; os badges não representam certificação nem resultado de testes.
+
+## 🌐 Acesse o EcoDescarte
+
+O **EcoDescarte** é uma plataforma web desenvolvida com React, TypeScript e Firebase, com o objetivo de facilitar o descarte correto de resíduos e contribuir para a **ODS 12 — Consumo e Produção Responsáveis da ONU**.
+
+O sistema está disponível online e pode ser acessado diretamente pelo navegador, sem necessidade de instalação.
+
+### 🚀 Demonstração Online
+
+**♻️ [Clique aqui para acessar o EcoDescarte](https://ecodescarte-af76d.web.app/)**
+
+Na plataforma, é possível pesquisar resíduos, consultar orientações de descarte, encontrar pontos de coleta e visualizar suas localizações no mapa.
+
+**Tecnologias:** React, TypeScript, Vite, Firebase e Google Maps.
+
 
 ## Sumário
 
@@ -979,7 +993,7 @@ Nomes de contas demo não comprovam autoria. Preencha com as informações ofici
 
 | Informação               | Preenchimento                                          |
 | ------------------------ | ------------------------------------------------------ |
-| Integrantes e RA         | **Lucas Brandão Viana - 12411248**; **João Gabriel de Freitas Faria - 1241106**; **Luca Barbosa Rodrigues- 1252211620889**                    |
+| Integrantes e RA         | **Lucas Brandão Viana - 12411248**; **João Gabriel de Freitas Faria - 12411106**; **Luca Barbosa Rodrigues - 1252211620889**; **Lucas Ribeiro Moreira - 123112959**                    |
 | Instituição              | **UniBH**                                              |
 | Disciplina               | **Usabilidade, desenvolvimento web, mobile e jogos**   |
 | Professor(a) responsável | **Daniel Henrique Matos De Paiva**                     |
