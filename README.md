@@ -24,10 +24,6 @@ O sistema está disponível online e pode ser acessado diretamente pelo navegado
 
 **♻️ [Clique aqui para acessar o EcoDescarte](https://ecodescarte-af76d.web.app/)**
 
-Na plataforma, é possível pesquisar resíduos, consultar orientações de descarte, encontrar pontos de coleta e visualizar suas localizações no mapa.
-
-**Tecnologias:** React, TypeScript, Vite, Firebase e Google Maps.
-
 
 ## Sumário
 
