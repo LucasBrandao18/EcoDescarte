@@ -85,3 +85,16 @@ Registrar versão de Hosting e regras antes de publicar. Um rollback apenas do H
 Observar erros de envio, renovação e permissões sem registrar códigos, links de ação, tokens ou e-mails de usuários. O Firebase aplica seus limites de envio; o cooldown local não protege contra abuso por chamadas diretas.
 
 Build e emuladores não comprovam entrega real de mensagens. A homologação e ativação remotas devem ter seu próprio registro de execução.
+
+## Registro da prévia — 04/11/2026
+
+- [Abrir cadastro na prévia](https://ecodescarte-af76d--email-verification-xumh52kg.web.app/cadastro).
+- Projeto: `ecodescarte-af76d`; canal: `email-verification`; expiração: 11/11/2026 às 20h52, horário de São Paulo.
+- Código da implementação: commit `c3b08ee`, branch `feature/email-verification`.
+- Versão Hosting da prévia: `d290c7256802908c`. A versão principal continuou sendo `6d6a8fda264e560d`.
+- O build usa `.env.preview.local`, ignorado pelo Git, com a configuração web pública do projeto e `VITE_AUTH_CONTINUE_URL` apontando a `/verificar-email` na própria prévia. Emuladores estão desativados.
+- A CLI autorizou o domínio da prévia no Auth. O handler padrão foi preservado. Nenhuma regra Firestore foi publicada.
+- A leitura da configuração Auth confirmou Email/Password ativo, domínio da prévia autorizado e handler `https://ecodescarte-af76d.firebaseapp.com/__/auth/action`.
+- Cadastro e página de verificação foram conferidos no navegador anônimo sem gravações remotas. Recebimento e consumo de e-mail real ainda dependem do teste com caixa postal controlada pelo responsável.
+
+A prévia pode ser usada para esse teste manual antes das Fases A/B. Não ativar as regras nem fazer merge/deploy principal como consequência automática do teste da prévia.

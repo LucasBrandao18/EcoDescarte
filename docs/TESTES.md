@@ -20,7 +20,17 @@ Ambiente efetivamente utilizado: Windows, Node 20.19.6, pnpm 9.15.4 com `--ignor
 
 O teste de navegador detectou uma leitura de perfil ausente em cache após criação por transação. A leitura passou a usar `getDocFromServer`; os cenários de reenvio e confirmação passaram depois da correção. A tela continua disponível quando essa leitura falha.
 
-Comando adicional: `npm run test:e2e:firebase`, com emuladores locais e Vite na porta 5178. Nenhuma regra nova foi publicada durante esta validação. A entrega real de mensagens e a prévia remota devem ser registradas separadamente após homologação; não são comprovadas pelos emuladores.
+Comando adicional: `npm run test:e2e:firebase`, com emuladores locais e Vite na porta 5178. Nenhuma regra nova foi publicada durante esta validação. A entrega real de mensagens não é comprovada pelos emuladores.
+
+### Prévia remota — 04/11/2026
+
+- Build Firebase gerado a partir da implementação do commit `c3b08ee`, com emuladores desativados e retorno de e-mail para a própria prévia.
+- [Prévia de Hosting](https://ecodescarte-af76d--email-verification-xumh52kg.web.app/cadastro), canal `email-verification`, disponível até 11/11/2026 às 20h52 (America/Sao_Paulo).
+- Projeto compartilhado `ecodescarte-af76d`; versão da prévia `d290c7256802908c`. Domínio autorizado pelo fluxo oficial da CLI.
+- Configuração Auth conferida por leitura: Email/Password ativo, domínio da prévia autorizado e handler padrão `https://ecodescarte-af76d.firebaseapp.com/__/auth/action` preservado.
+- Smoke test no Chrome anônimo: cadastro e rota `/verificar-email` acessíveis, sem erros JavaScript e sem criar contas ou gravar documentos de teste.
+- Canal principal permaneceu na versão `6d6a8fda264e560d`, conferida antes e depois da publicação. Somente o Hosting da prévia foi publicado; regras restritivas e Fases A/B não foram ativadas no site principal.
+- Recebimento de e-mail real e confirmação por caixa postal: pendentes do teste manual do responsável. Não declarar esses itens aprovados com base no smoke test.
 
 ## Relatório histórico — 02/10/2026
 
