@@ -9,6 +9,7 @@
     "preview": "vite preview --host 127.0.0.1",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:e2e:firebase": "firebase emulators:exec --only auth,firestore --project demo-ecodescarte \"playwright test --config playwright.firebase.config.ts\"",
     "test:failures": "playwright test --config playwright.failures.config.ts",
     "test:rules": "firebase emulators:exec --only firestore --project demo-ecodescarte \"vitest run tests/firestore.rules.test.ts\"",
     "seed": "tsx scripts/seed.ts",

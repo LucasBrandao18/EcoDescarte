@@ -2,7 +2,8 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
-    function admin() { return signedIn() && request.auth.token.get('admin', false) == true; }
+    function verified() { return signedIn() && request.auth.token.get('email_verified', false) == true; }
+    function admin() { return verified() && request.auth.token.get('admin', false) == true; }
     function owner(userId) { return signedIn() && request.auth.uid == userId; }
     function text(value, max) { return value is string && value.size() <= max; }
     function nonempty(value, max) { return text(value, max) && value.size() > 0; }
@@ -32,7 +33,7 @@ service cloud.firestore {
         && request.resource.data.role == 'user'
         && request.resource.data.email == request.auth.token.email
         && newlyCreated(request.resource.data);
-      allow update: if owner(id) && validProfile(request.resource.data)
+      allow update: if verified() && owner(id) && validProfile(request.resource.data)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name','photoURL']);
       allow delete: if false;
     }
@@ -73,7 +74,7 @@ service cloud.firestore {
     function reviewAggregateUpdate(id) {
       let next = request.resource.data;
       let review = getAfter(reviewPath(id)).data;
-      return signedIn() && resource.data.active == true
+      return verified() && resource.data.active == true
         && !exists(reviewPath(id))
         && review.userId == request.auth.uid && review.pointId == id
         && review.createdAt == request.time && review.confirmed == true
@@ -95,7 +96,7 @@ service cloud.firestore {
     }
     match /suggestions/{id} {
       allow read: if ownRead();
-      allow create: if signedIn()
+      allow create: if verified()
         && request.resource.data.keys().hasOnly(['userId','name','address','number','district','city','state','zipCode','acceptedWasteIds','openingHours','phone','observation','status','createdAt'])
         && owner(request.resource.data.userId) && addressFields(request.resource.data)
         && text(request.resource.data.observation,2000)
@@ -115,7 +116,7 @@ service cloud.firestore {
     }
     match /disposals/{id} {
       allow read: if ownRead();
-      allow create: if signedIn()
+      allow create: if verified()
         && request.resource.data.keys().hasOnly(['userId','wasteId','collectionPointId','quantity','date','createdAt'])
         && owner(request.resource.data.userId) && newlyCreated(request.resource.data)
         && request.resource.data.quantity is int && request.resource.data.quantity > 0 && request.resource.data.quantity <= 100000
@@ -131,7 +132,7 @@ service cloud.firestore {
       // A transaction must be able to check that its first review does not exist.
       allow get: if signedIn() && (!exists(/databases/$(database)/documents/reviews/$(id)) || ownRead());
       allow list: if ownRead();
-      allow create: if signedIn()
+      allow create: if verified()
         && request.resource.data.keys().hasOnly(['userId','pointId','rating','confirmed','comment','createdAt'])
         && owner(request.resource.data.userId) && newlyCreated(request.resource.data)
         && id == request.auth.uid + '_' + request.resource.data.pointId

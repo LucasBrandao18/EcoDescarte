@@ -21,6 +21,8 @@ export default function AdminPage() {
   const location = useLocation();
   if (loading) return <Loading />;
   if (!user) return <Navigate to="/entrar" state={{ from: location.pathname }} replace />;
+  if (!user.emailVerified)
+    return <Navigate to="/verificar-email" state={{ from: location }} replace />;
   if (user.role !== 'admin')
     return (
       <EmptyState

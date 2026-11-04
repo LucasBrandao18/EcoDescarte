@@ -21,6 +21,11 @@
   line-height: 1.6;
   font-weight: 400;
 }
+.verification-page { display: flex; justify-content: center; }
+.verification-card { width: 100%; max-width: 620px; overflow-wrap: anywhere; }
+.verification-card > svg { color: var(--green); }
+.verification-actions { display: grid; gap: 12px; margin: 24px 0; }
+.verification-actions .button { white-space: normal; }
 * {
   box-sizing: border-box;
 }

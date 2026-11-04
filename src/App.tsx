@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Outlet, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import { AppProvider, useApp } from './contexts/AppContext';
 import Layout from './components/Layout';
 import { Loading } from './components/UI';
@@ -8,6 +8,7 @@ import { SearchPage, WasteDetailPage } from './pages/WastePages';
 import { PointsPage, PointDetailPage } from './pages/PointPages';
 import { AboutPage, OdsPage, NotFoundPage } from './pages/AboutPages';
 import { LoginPage, RegisterPage, RecoverPage } from './pages/AuthPages';
+import VerifyEmailPage from './pages/VerifyEmailPage';
 import {
   ProfilePage,
   HistoryPage,
@@ -19,6 +20,15 @@ const AdminPage = lazy(() => import('./pages/AdminPages'));
 function UserLayout() {
   const { loading } = useApp();
   return <div className="container page">{loading ? <Loading /> : <Outlet />}</div>;
+}
+function VerifiedRoute() {
+  const { user, loading, registering } = useApp();
+  const location = useLocation();
+  if (loading || registering) return <Loading />;
+  if (!user) return <Navigate to="/entrar" state={{ from: location }} replace />;
+  if (!user.emailVerified)
+    return <Navigate to="/verificar-email" state={{ from: location }} replace />;
+  return <Outlet />;
 }
 export default function App() {
   return (
@@ -36,13 +46,16 @@ export default function App() {
               <Route path="entrar" element={<LoginPage />} />
               <Route path="cadastro" element={<RegisterPage />} />
               <Route path="recuperar-senha" element={<RecoverPage />} />
+              <Route path="verificar-email" element={<VerifyEmailPage />} />
               <Route element={<UserLayout />}>
                 <Route path="perfil" element={<ProfilePage />} />
                 <Route path="meu-impacto" element={<ProfilePage />} />
                 <Route path="historico" element={<HistoryPage />} />
-                <Route path="sugerir-ponto" element={<SuggestPage />} />
                 <Route path="ecopontos" element={<EcoPointsPage />} />
-                <Route path="registrar-descarte" element={<DisposalPage />} />
+                <Route element={<VerifiedRoute />}>
+                  <Route path="sugerir-ponto" element={<SuggestPage />} />
+                  <Route path="registrar-descarte" element={<DisposalPage />} />
+                </Route>
               </Route>
               <Route path="sobre" element={<AboutPage />} />
               <Route path="ods-12" element={<OdsPage />} />

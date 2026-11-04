@@ -1,6 +1,8 @@
 import {
   createUserWithEmailAndPassword,
   getIdTokenResult,
+  reload,
+  sendEmailVerification,
   onIdTokenChanged,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
@@ -12,6 +14,7 @@ import {
   collection,
   doc,
   getDoc,
+  getDocFromServer,
   getDocs,
   query,
   runTransaction,
@@ -22,10 +25,12 @@ import {
   where,
   type DocumentData,
 } from 'firebase/firestore';
-import { getFirebase } from '../config/firebase';
+import { getFirebase, verificationSettings } from '../config/firebase';
 import type {
   AppData,
   AppUser,
+  UserProfile,
+  RegistrationResult,
   CollectionPoint,
   DisposalInput,
   ReviewInput,
@@ -42,6 +47,7 @@ import {
   validateReview,
   validateSuggestion,
   validateWaste,
+  friendlyError,
 } from './validation';
 
 function decode<T>(id: string, data: DocumentData): T {
@@ -63,34 +69,38 @@ export class FirebaseBackend implements Backend {
   }
   subscribe = (callback: () => void) => onIdTokenChanged(this.connection.auth, () => callback());
   getUser = async (): Promise<AppUser | null> => {
-    const { auth, db } = this.connection;
+    const { auth } = this.connection;
     await auth.authStateReady();
     const authUser = auth.currentUser;
     if (!authUser) return null;
-    const [token, snapshot] = await Promise.all([
-      getIdTokenResult(authUser),
-      getDoc(doc(db, 'users', authUser.uid)),
-    ]);
-    const saved = snapshot.exists() ? decode<AppUser>(snapshot.id, snapshot.data()) : null;
+    let claims: Record<string, unknown> = {};
+    try {
+      claims = (await getIdTokenResult(authUser)).claims;
+    } catch {
+      /* Keep the Auth identity available for recovery, without granting privileges. */
+    }
+    if (auth.currentUser !== authUser) return null;
     return {
       id: authUser.uid,
-      name: saved?.name || authUser.displayName || 'Participante',
+      name: authUser.displayName || 'Participante',
       email: authUser.email || '',
-      role: token.claims.admin === true ? 'admin' : 'user',
-      photoURL: saved?.photoURL || authUser.photoURL || '',
-      createdAt: saved?.createdAt || authUser.metadata.creationTime || now(),
+      role: claims.admin === true ? 'admin' : 'user',
+      photoURL: authUser.photoURL || '',
+      createdAt: authUser.metadata.creationTime || now(),
+      emailVerified: authUser.emailVerified && claims.email_verified === true,
     };
   };
   private async requireUser(admin = false) {
     const user = await this.getUser();
     if (!user) throw new Error('Entre na sua conta para continuar.');
+    if (!user.emailVerified) throw new Error('Confirme seu e-mail para continuar.');
     if (admin && user.role !== 'admin') throw new Error('Esta ação é restrita a administradores.');
     return user;
   }
   getData = async (): Promise<AppData> => {
     const user = await this.getUser(),
       { db } = this.connection,
-      isAdmin = user?.role === 'admin';
+      isAdmin = user?.role === 'admin' && user.emailVerified;
     const read = async <T>(name: string, filter?: [string, unknown]) => {
       const source = collection(db, name);
       const snapshot = await getDocs(
@@ -101,7 +111,11 @@ export class FirebaseBackend implements Backend {
     const [wastes, points, users, suggestions, disposals, reviews, searchLogs] = await Promise.all([
       read<Waste>('wastes', isAdmin ? undefined : ['active', true]),
       read<CollectionPoint>('collectionPoints', isAdmin ? undefined : ['active', true]),
-      isAdmin ? read<AppUser>('users') : Promise.resolve(user ? [user] : []),
+      isAdmin
+        ? read<UserProfile>('users')
+        : user
+          ? this.readProfile(user.id).then((p) => [p])
+          : Promise.resolve([]),
       user
         ? read<AppData['suggestions'][number]>(
             'suggestions',
@@ -121,20 +135,101 @@ export class FirebaseBackend implements Backend {
   login = async (email: string, password: string) => {
     credentials(email);
     await signInWithEmailAndPassword(this.connection.auth, email.trim(), password);
+    // Auth login succeeded even if Firestore is temporarily unavailable.
+    // getData reports a missing/unavailable profile without losing the session.
+    await this.repairProfile().catch(() => undefined);
   };
-  register = async (name: string, email: string, password: string) => {
+  register = async (name: string, email: string, password: string): Promise<RegistrationResult> => {
     required(name, 'Nome', 100);
     credentials(email, password);
-    const { auth, db } = this.connection;
+    const settings = verificationSettings();
+    const { auth } = this.connection;
     const result = await createUserWithEmailAndPassword(auth, email.trim(), password);
-    await setDoc(doc(db, 'users', result.user.uid), {
-      name: name.trim(),
-      email: result.user.email,
-      role: 'user',
-      photoURL: '',
-      createdAt: serverTimestamp(),
+    const outcome: RegistrationResult = {
+      userId: result.user.uid,
+      profileReady: false,
+      verification: 'failed',
+    };
+    try {
+      await updateAuthProfile(result.user, { displayName: name.trim() });
+    } catch {
+      outcome.profileWarning =
+        'Sua conta foi criada, mas não foi possível atualizar o nome na autenticação.';
+    }
+    try {
+      await this.createProfile(result.user, name.trim());
+      outcome.profileReady = true;
+    } catch {
+      outcome.profileWarning =
+        'Sua conta foi criada. Tente preparar seu perfil novamente; não é necessário refazer o cadastro.';
+    }
+    try {
+      auth.languageCode = 'pt-BR';
+      await sendEmailVerification(result.user, settings);
+      outcome.verification = 'sent';
+    } catch (cause) {
+      outcome.verificationError = friendlyError(cause);
+    }
+    return outcome;
+  };
+  private async readProfile(id: string): Promise<UserProfile> {
+    const snapshot = await getDocFromServer(doc(this.connection.db, 'users', id));
+    if (!snapshot.exists())
+      throw new Error(
+        'Seu perfil ainda precisa ser preparado. Tente preparar o perfil na página de confirmação do e-mail.',
+      );
+    return decode<UserProfile>(id, snapshot.data());
+  }
+  private async createProfile(
+    user: import('firebase/auth').User,
+    name = user.displayName || 'Participante',
+  ) {
+    const ref = doc(this.connection.db, 'users', user.uid);
+    await runTransaction(this.connection.db, async (tx) => {
+      const snapshot = await tx.get(ref);
+      if (!snapshot.exists())
+        tx.set(ref, {
+          name,
+          email: user.email,
+          role: 'user',
+          photoURL: user.photoURL || '',
+          createdAt: serverTimestamp(),
+        });
     });
-    await updateAuthProfile(result.user, { displayName: name.trim() });
+  }
+  repairProfile = async () => {
+    const { auth } = this.connection;
+    await auth.authStateReady();
+    if (!auth.currentUser) throw new Error('Entre na sua conta para continuar.');
+    await this.createProfile(auth.currentUser);
+  };
+  private async verificationUser() {
+    const { auth } = this.connection;
+    await auth.authStateReady();
+    const user = auth.currentUser;
+    if (!user) throw new Error('Entre na sua conta para continuar.');
+    await reload(user);
+    if (auth.currentUser !== user) throw new Error('A sessão mudou. Entre novamente.');
+    return user;
+  }
+  checkEmailVerification = async () => {
+    const user = await this.verificationUser();
+    if (!user.emailVerified) return false;
+    const token = await getIdTokenResult(user, true);
+    if (this.connection.auth.currentUser !== user)
+      throw new Error('A sessão mudou. Entre novamente.');
+    return token.claims.email_verified === true;
+  };
+  resendVerificationEmail = async (): Promise<'sent' | 'verified'> => {
+    const settings = verificationSettings();
+    const user = await this.verificationUser();
+    if (user.emailVerified) {
+      await this.checkEmailVerification();
+      return 'verified';
+    }
+    this.connection.auth.languageCode = 'pt-BR';
+    await sendEmailVerification(user, settings);
+    return 'sent';
   };
   logout = async () => {
     await signOut(this.connection.auth);

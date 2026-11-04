@@ -26,6 +26,17 @@ const suggestion: SuggestionInput = {
   observation: 'Indicação de teste',
 };
 describe('serviço de demonstração', () => {
+  it('libera sessões locais antigas sem alegar verificação ou envio real', async () => {
+    const service = new DemoBackend();
+    await service.loginDemo('user');
+    const stored = localStorage.getItem(DEMO_STORAGE_KEY)!;
+    expect(stored).not.toContain('emailVerified');
+    expect((await new DemoBackend().getUser())?.emailVerified).toBe(true);
+    await expect(service.resendVerificationEmail()).rejects.toThrow('não envia');
+    expect(await service.checkEmailVerification()).toBe(true);
+    const result = await service.register('Teste', 'novo@example.com', 'SenhaTeste123!');
+    expect(result.verification).toBe('not-applicable');
+  });
   it('fornece pelo menos 20 resíduos e identifica todos os pontos como fictícios', async () => {
     const service = new DemoBackend(),
       data = await service.getData();

@@ -1,6 +1,8 @@
 import type {
   AppData,
   AppUser,
+  UserProfile,
+  RegistrationResult,
   CollectionPoint,
   DisposalInput,
   ReviewInput,
@@ -101,7 +103,11 @@ export class DemoBackend implements Backend {
       window.removeEventListener('storage', storage);
     };
   };
-  getUser = async () => this.state.data.users.find((u) => u.id === this.state.sessionId) || null;
+  getUser = async (): Promise<AppUser | null> => {
+    const profile = this.state.data.users.find((u) => u.id === this.state.sessionId);
+    // This also supports version-1 local profiles created before this feature.
+    return profile ? { ...profile, emailVerified: true } : null;
+  };
   getData = async (): Promise<AppData> => {
     const user = await this.getUser(),
       data = structuredClone(this.state.data);
@@ -128,7 +134,7 @@ export class DemoBackend implements Backend {
     this.save();
     this.emit();
   };
-  register = async (name: string, email: string, password: string) => {
+  register = async (name: string, email: string, password: string): Promise<RegistrationResult> => {
     required(name, 'Nome', 100);
     credentials(email, password);
     email = email.trim().toLowerCase();
@@ -137,7 +143,7 @@ export class DemoBackend implements Backend {
     const id = uid(),
       salt = toHex(crypto.getRandomValues(new Uint8Array(16))),
       hash = await passwordDigest(password, salt);
-    const user: AppUser = {
+    const user: UserProfile = {
       id,
       name: name.trim(),
       email,
@@ -150,6 +156,17 @@ export class DemoBackend implements Backend {
     this.state.sessionId = id;
     this.save();
     this.emit();
+    return { userId: id, profileReady: true, verification: 'not-applicable' };
+  };
+  checkEmailVerification = async () => {
+    this.auth();
+    return true;
+  };
+  resendVerificationEmail = async (): Promise<'sent' | 'verified'> => {
+    throw new Error('O modo demonstração não envia e-mails.');
+  };
+  repairProfile = async () => {
+    this.auth();
   };
   loginDemo = async (role: 'user' | 'admin') => {
     this.state.sessionId = role === 'admin' ? 'demo-admin' : 'demo-user';

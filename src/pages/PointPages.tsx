@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import {
   Clock3,
   Globe,
@@ -202,6 +202,7 @@ export function PointsPage({ mapOnly = false }: { mapOnly?: boolean }) {
   );
 }
 export function PointDetailPage() {
+  const currentLocation = useLocation();
   const { id } = useParams();
   const { data, user, loading, reviewPoint } = useApp();
   const { busy, run, feedback } = useFeedback();
@@ -356,9 +357,16 @@ export function PointDetailPage() {
               por conta.
             </p>
             {!user ? (
-              <Link to="/entrar" className="button secondary">
+              <Link to="/entrar" state={{ from: currentLocation }} className="button secondary">
                 Entrar para avaliar
               </Link>
+            ) : !user.emailVerified ? (
+              <Notice tone="warning">
+                Confirme seu e-mail para avaliar.{' '}
+                <Link to="/verificar-email" state={{ from: currentLocation }}>
+                  Confirmar e-mail
+                </Link>
+              </Notice>
             ) : reviewed ? (
               <Notice tone="success">Você já contribuiu com este ponto. Obrigado!</Notice>
             ) : (

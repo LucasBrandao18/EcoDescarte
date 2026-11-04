@@ -27,10 +27,20 @@ const run = process.env.FIRESTORE_EMULATOR_HOST ? describe : describe.skip;
 setLogLevel('silent');
 run('Firestore: autorização e integridade', () => {
   let env: RulesTestEnvironment;
-  const user = () => env.authenticatedContext('alice', { email: 'alice@example.com' }).firestore();
-  const other = () => env.authenticatedContext('bob', { email: 'bob@example.com' }).firestore();
+  const user = () =>
+    env
+      .authenticatedContext('alice', { email: 'alice@example.com', email_verified: true })
+      .firestore();
+  const other = () =>
+    env.authenticatedContext('bob', { email: 'bob@example.com', email_verified: true }).firestore();
   const admin = () =>
-    env.authenticatedContext('admin', { email: 'admin@example.com', admin: true }).firestore();
+    env
+      .authenticatedContext('admin', {
+        email: 'admin@example.com',
+        admin: true,
+        email_verified: true,
+      })
+      .firestore();
   const visitor = () => env.unauthenticatedContext().firestore();
   const disposal = () => ({
     userId: 'alice',
@@ -105,6 +115,82 @@ run('Firestore: autorização e integridade', () => {
     await assertFails(getDoc(doc(visitor(), 'wastes', 'hidden')));
     await assertFails(getDocs(collection(visitor(), 'wastes')));
     await assertSucceeds(getDocs(collection(admin(), 'wastes')));
+  });
+  for (const token of [
+    { email: 'alice@example.com' },
+    { email: 'alice@example.com', email_verified: false },
+  ]) {
+    it(`bloqueia contribuições e edição com email_verified=${String('email_verified' in token ? token.email_verified : 'ausente')}`, async () => {
+      const db = env.authenticatedContext('alice', token).firestore();
+      await assertSucceeds(getDoc(doc(db, 'users', 'alice')));
+      await assertSucceeds(
+        getDocs(query(collection(db, 'disposals'), where('userId', '==', 'alice'))),
+      );
+      await assertFails(updateDoc(doc(db, 'users', 'alice'), { name: 'Alterado' }));
+      await assertFails(setDoc(doc(db, 'suggestions', 'pending'), suggestion()));
+      await assertFails(setDoc(doc(db, 'disposals', 'pending'), disposal()));
+      const batch = writeBatch(db);
+      batch.set(doc(db, 'reviews', 'alice_demo-centro'), {
+        userId: 'alice',
+        pointId: 'demo-centro',
+        rating: 4,
+        confirmed: true,
+        comment: '',
+        createdAt: serverTimestamp(),
+      });
+      batch.update(doc(db, 'collectionPoints', 'demo-centro'), {
+        rating: 4,
+        totalReviews: 1,
+        updatedAt: serverTimestamp(),
+      });
+      await assertFails(batch.commit());
+      await assertFails(
+        updateDoc(doc(db, 'collectionPoints', 'demo-centro'), {
+          rating: 5,
+          totalReviews: 1,
+          updatedAt: serverTimestamp(),
+        }),
+      );
+    });
+  }
+  it('permite perfil inicial pendente, protege a verificação e impede admin não verificado', async () => {
+    const db = env
+      .authenticatedContext('pending', { email: 'pending@example.com', email_verified: false })
+      .firestore();
+    const profile = {
+      name: 'Pendente',
+      email: 'pending@example.com',
+      role: 'user',
+      photoURL: '',
+      createdAt: serverTimestamp(),
+    };
+    await assertFails(setDoc(doc(db, 'users', 'pending'), { ...profile, emailVerified: true }));
+    await assertSucceeds(setDoc(doc(db, 'users', 'pending'), profile));
+    await assertSucceeds(getDoc(doc(db, 'users', 'pending')));
+    await assertFails(getDoc(doc(db, 'users', 'alice')));
+    await assertFails(updateDoc(doc(db, 'users', 'pending'), { emailVerified: true }));
+    const pendingAdmin = env
+      .authenticatedContext('admin', {
+        email: 'admin@example.com',
+        admin: true,
+        email_verified: false,
+      })
+      .firestore();
+    await assertFails(getDocs(collection(pendingAdmin, 'users')));
+    await assertFails(
+      updateDoc(doc(pendingAdmin, 'wastes', 'papel'), {
+        active: false,
+        updatedAt: serverTimestamp(),
+      }),
+    );
+    await assertSucceeds(
+      setDoc(doc(db, 'searchLogs', 'pending'), {
+        term: 'papel',
+        wasteId: 'papel',
+        userId: 'pending',
+        createdAt: serverTimestamp(),
+      }),
+    );
   });
   it('protege perfis, papéis e EcoPontos contra alterações do cliente', async () => {
     await assertSucceeds(updateDoc(doc(user(), 'users', 'alice'), { name: 'Alice Silva' }));

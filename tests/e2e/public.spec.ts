@@ -80,7 +80,7 @@ test('localização permitida ordena por proximidade sem persistir coordenadas',
 
 test('login preserva o material e o ponto escolhidos pelo visitante', async ({ page }) => {
   await page.goto('/registrar-descarte?waste=pilha&point=demo-pinheiros');
-  await page.getByRole('link', { name: 'Entrar na minha conta' }).click();
+  await expect(page).toHaveURL(/\/entrar$/);
   await page.getByRole('button', { name: 'Entrar como usuário demo' }).click();
   await expect(page).toHaveURL(/registrar-descarte\?waste=pilha&point=demo-pinheiros$/);
   await expect(page.getByRole('combobox', { name: 'Qual material você descartou?' })).toHaveValue(

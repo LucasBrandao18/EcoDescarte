@@ -122,6 +122,13 @@ export function friendlyError(error: unknown) {
     'auth/invalid-email': 'Informe um e-mail válido.',
     'auth/too-many-requests': 'Muitas tentativas. Aguarde um pouco e tente novamente.',
     'auth/network-request-failed': 'Sem conexão com a autenticação. Confira sua internet.',
+    'auth/user-token-expired': 'Sua sessão expirou. Saia e entre novamente para continuar.',
+    'auth/invalid-user-token': 'Sua sessão expirou. Saia e entre novamente para continuar.',
+    'auth/user-disabled': 'Esta conta está desativada. Entre em contato com a administração.',
+    'auth/unauthorized-continue-uri':
+      'O domínio de retorno precisa ser autorizado no Firebase Authentication.',
+    'auth/invalid-continue-uri':
+      'A URL de retorno do e-mail precisa ser corrigida na configuração.',
     'permission-denied':
       'Você não tem permissão para esta ação. Entre novamente ou confira as regras do Firebase.',
     unavailable: 'O serviço está indisponível. Confira sua conexão e tente novamente.',

@@ -112,6 +112,12 @@ A proteção de rota melhora a navegação, mas a autoridade de acesso em Fireba
 
 O cadastro público cria usuários comuns. A concessão de administração ocorre por operação privilegiada fora do frontend. Alterar `role` em uma requisição cliente não deve permitir promoção de acesso. As regras também restringem campos, tipos, estados de análise e vínculos entre documentos.
 
+O perfil persistido (`UserProfile`) é separado do usuário de sessão (`AppUser`). `emailVerified` é derivado do Auth e do claim do ID token, sem campo editável em `users`. Contas pendentes podem criar/ler o próprio perfil e consultar suas contribuições; escrita de perfil e contribuições requerem `email_verified=true`. Administração requer também esse claim, inclusive nas consultas amplas do backend.
+
+O resultado do cadastro distingue perfil pronto/pendente e envio aceito/falho. A finalização no contexto impede navegação antecipada pelo listener do Auth. A inicialização do perfil usa transação e não sobrescreve documentos existentes. A sessão Auth é obtida independentemente do Firestore; falhas de dados não transformam uma conta autenticada em visitante. Mudanças de conta limpam dados privados, e respostas antigas são descartadas por geração de carregamento.
+
+`/verificar-email` oferece reenvio manual com cooldown visual de 60 segundos e consulta manual ou por foco/visibilidade. Consultas simultâneas são agrupadas; não há polling nem envio automático no login. O link usa o handler padrão do Firebase e uma URL de retorno explícita por build. O contexto só libera as ações após renovar o token. Os detalhes públicos de pontos bloqueiam o formulário de avaliação, preservando a consulta. Veja [VERIFICACAO_EMAIL.md](VERIFICACAO_EMAIL.md).
+
 O modo local possui verificações para demonstrar os mesmos fluxos, mas não oferece isolamento contra a pessoa que controla o navegador. Para implantação, as regras precisam ser publicadas e testadas no projeto de destino. Não se deve liberar o Firestore com regras abertas para contornar erros de permissão.
 
 ## Mapas, localização e privacidade

@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Leaf, ShieldCheck } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { Notice, useFeedback } from '../components/UI';
+import { authDestination, rememberVerificationReturn } from '../utils/authNavigation';
 
 function AuthLayout({
   title,
@@ -36,24 +37,20 @@ function AuthLayout({
 }
 
 function useAuthRedirect() {
-  const { user } = useApp();
+  const { user, loading, registering } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = (location.state as { from?: string | { pathname?: string; search?: string } } | null)
-    ?.from;
-  const candidate =
-    typeof from === 'string' ? from : from?.pathname ? `${from.pathname}${from.search || ''}` : '';
-  const destination =
-    candidate.startsWith('/') &&
-    !candidate.startsWith('//') &&
-    !/^\/(entrar|cadastro|recuperar-senha)(?:[/?#]|$)/.test(candidate)
-      ? candidate
-      : user?.role === 'admin'
-        ? '/admin'
-        : '/perfil';
+  const destination = authDestination(
+    location.state?.from,
+    user?.role === 'admin' ? '/admin' : '/perfil',
+  );
   useEffect(() => {
-    if (user) navigate(destination, { replace: true });
-  }, [user, navigate, destination]);
+    if (!user || loading || registering) return;
+    if (!user.emailVerified) {
+      rememberVerificationReturn(user.id, destination);
+      navigate('/verificar-email', { replace: true, state: { from: destination } });
+    } else navigate(destination, { replace: true });
+  }, [user, loading, registering, navigate, destination]);
 }
 
 export function LoginPage() {

@@ -12,7 +12,13 @@ import {
   Timestamp,
   writeBatch,
 } from 'firebase/firestore';
-import { confirmPasswordReset, getIdToken, verifyPasswordResetCode } from 'firebase/auth';
+import {
+  applyActionCode,
+  confirmPasswordReset,
+  getIdToken,
+  getIdTokenResult,
+  verifyPasswordResetCode,
+} from 'firebase/auth';
 import { seedPoints, seedWastes } from '../src/data/seed';
 import { userStats } from '../src/utils/domain';
 
@@ -33,6 +39,7 @@ describe.skipIf(!enabled)('FirebaseBackend com Authentication e Firestore emulad
     vi.stubEnv('VITE_FIREBASE_APP_ID', '1:123:web:demo');
     vi.stubEnv('VITE_USE_EMULATORS', 'true');
     vi.stubEnv('VITE_DATA_MODE', 'firebase');
+    vi.stubEnv('VITE_AUTH_CONTINUE_URL', 'http://127.0.0.1:5173/verificar-email');
     env = await initializeTestEnvironment({
       projectId,
       firestore: { rules: readFileSync('firestore.rules', 'utf8') },
@@ -69,12 +76,52 @@ describe.skipIf(!enabled)('FirebaseBackend com Authentication e Firestore emulad
     await deleteAdmin(adminApp);
     vi.unstubAllEnvs();
   });
+  async function verifyEmail(email: string) {
+    const response = await fetch(
+      `http://127.0.0.1:9099/emulator/v1/projects/${projectId}/oobCodes`,
+    );
+    const body = (await response.json()) as {
+      oobCodes: { email: string; oobCode: string; requestType: string }[];
+    };
+    const code = body.oobCodes
+      .filter((c) => c.email === email && c.requestType === 'VERIFY_EMAIL')
+      .at(-1)!.oobCode;
+    await applyActionCode(connection.auth, code);
+    await expect(backend.checkEmailVerification()).resolves.toBe(true);
+    expect((await getIdTokenResult(connection.auth.currentUser!)).claims.email_verified).toBe(true);
+  }
   it('autentica, recupera senha e persiste descartes, avaliação e aprovação com isolamento por usuário', async () => {
     expect((await backend.getData()).wastes).toHaveLength(22);
     await backend.logSearch('pilha', 'pilha');
-    await backend.register('Alice Firebase', 'alice.integration@example.com', 'SenhaInicial123!');
+    const outcome = await backend.register(
+      'Alice Firebase',
+      'alice.integration@example.com',
+      'SenhaInicial123!',
+    );
+    expect(outcome).toMatchObject({ profileReady: true, verification: 'sent' });
     const alice = (await backend.getUser())!;
     expect(alice.role).toBe('user');
+    expect(alice.emailVerified).toBe(false);
+    await expect(backend.checkEmailVerification()).resolves.toBe(false);
+    await expect(backend.updateProfile('Bloqueado')).rejects.toThrow('Confirme');
+    await expect(
+      backend.recordDisposal({
+        wasteId: 'pilha',
+        collectionPointId: 'demo-pinheiros',
+        quantity: 1,
+        date: '2026-01-01',
+      }),
+    ).rejects.toThrow('Confirme');
+    await expect(
+      backend.reviewPoint({ pointId: 'demo-pinheiros', rating: 4, comment: '' }),
+    ).rejects.toThrow('Confirme');
+    expect((await backend.getData()).users[0].id).toBe(alice.id);
+    await backend.logout();
+    await backend.login(alice.email, 'SenhaInicial123!');
+    expect((await backend.getUser())?.emailVerified).toBe(false);
+    await expect(backend.resendVerificationEmail()).resolves.toBe('sent');
+    await verifyEmail(alice.email);
+    await expect(backend.resendVerificationEmail()).resolves.toBe('verified');
     await backend.updateProfile('Alice Integração');
     expect((await backend.getUser())?.name).toBe('Alice Integração');
     await backend.recordDisposal({
@@ -109,8 +156,10 @@ describe.skipIf(!enabled)('FirebaseBackend com Authentication e Firestore emulad
     await backend.resetPassword(alice.email);
     const oob = (await (
       await fetch(`http://127.0.0.1:9099/emulator/v1/projects/${projectId}/oobCodes`)
-    ).json()) as { oobCodes: { email: string; oobCode: string }[] };
-    const code = oob.oobCodes.find((c) => c.email === alice.email)!.oobCode;
+    ).json()) as { oobCodes: { email: string; oobCode: string; requestType: string }[] };
+    const code = oob.oobCodes.find(
+      (c) => c.email === alice.email && c.requestType === 'PASSWORD_RESET',
+    )!.oobCode;
     expect(await verifyPasswordResetCode(connection.auth, code)).toBe(alice.email);
     await confirmPasswordReset(connection.auth, code, 'SenhaNova123!');
     await backend.logout();
@@ -123,6 +172,10 @@ describe.skipIf(!enabled)('FirebaseBackend com Authentication e Firestore emulad
     await getAdminAuth(adminApp).setCustomUserClaims(adminUser.id, { admin: true });
     await getIdToken(connection.auth.currentUser!, true);
     expect((await backend.getUser())?.role).toBe('admin');
+    expect((await backend.getUser())?.emailVerified).toBe(false);
+    await expect(backend.saveWaste(seedWastes[0])).rejects.toThrow('Confirme');
+    expect((await backend.getData()).users).toHaveLength(1);
+    await verifyEmail(adminUser.email);
     await backend.moderateSuggestion(contribution.id, true, { lat: -23.55, lng: -46.63 });
     await expect(
       backend.moderateSuggestion(contribution.id, true, { lat: -23.55, lng: -46.63 }),

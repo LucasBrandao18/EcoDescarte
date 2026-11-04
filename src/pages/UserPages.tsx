@@ -118,6 +118,12 @@ export function ProfilePage() {
           Seu histórico pertence a esta demonstração e fica armazenado neste navegador.
         </Notice>
       )}
+      {!user.emailVerified && (
+        <Notice tone="warning">
+          Confirme seu e-mail para contribuir e editar o perfil.{' '}
+          <Link to="/verificar-email">Confirmar e-mail</Link>
+        </Notice>
+      )}
       <div className="stat-grid">
         <StatCard
           label="EcoPontos conquistados"
@@ -155,7 +161,7 @@ export function ProfilePage() {
         <section className="panel">
           <div className="section-heading">
             <h2>Seu perfil</h2>
-            {!editing && (
+            {!editing && user.emailVerified && (
               <button className="button secondary" type="button" onClick={() => setEditing(true)}>
                 Editar nome
               </button>
@@ -171,7 +177,7 @@ export function ProfilePage() {
               alt={`Foto de ${user.name}`}
             />
           )}
-          {editing ? (
+          {editing && user.emailVerified ? (
             <form className="form-grid" onSubmit={save}>
               <label className="field">
                 Nome

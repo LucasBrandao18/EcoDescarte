@@ -53,13 +53,24 @@ export interface CollectionPoint {
   createdAt: string;
   updatedAt: string;
 }
-export interface AppUser {
+export interface UserProfile {
   id: string;
   name: string;
   email: string;
   role: 'user' | 'admin';
   photoURL: string;
   createdAt: string;
+}
+export interface AppUser extends UserProfile {
+  /** Session-only state, derived from Auth and the current ID token. */
+  emailVerified: boolean;
+}
+export interface RegistrationResult {
+  userId: string;
+  profileReady: boolean;
+  profileWarning?: string;
+  verification: 'sent' | 'failed' | 'not-applicable';
+  verificationError?: string;
 }
 export interface Suggestion {
   id: string;
@@ -109,7 +120,7 @@ export interface SearchLog {
 export interface AppData {
   wastes: Waste[];
   points: CollectionPoint[];
-  users: AppUser[];
+  users: UserProfile[];
   suggestions: Suggestion[];
   disposals: Disposal[];
   reviews: Review[];
@@ -127,9 +138,17 @@ export interface AppContextValue {
   mode: 'demo' | 'firebase';
   loading: boolean;
   error: string | null;
+  registering: boolean;
+  registrationResult: RegistrationResult | null;
+  verificationBusy: boolean;
+  verificationError: string | null;
+  verificationSentAt: number | null;
   refresh: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<RegistrationResult>;
+  resendVerificationEmail: () => Promise<'sent' | 'verified'>;
+  checkEmailVerification: () => Promise<boolean>;
+  repairProfile: () => Promise<void>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   loginDemo: (role: 'user' | 'admin') => Promise<void>;

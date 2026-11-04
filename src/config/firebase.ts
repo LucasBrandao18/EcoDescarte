@@ -39,3 +39,25 @@ export function getFirebase() {
   return { auth, db };
 }
 let emulatorsConnected = false;
+
+export function verificationSettings() {
+  const value = environment.VITE_AUTH_CONTINUE_URL?.trim();
+  try {
+    const url = new URL(value || '');
+    const local = ['localhost', '127.0.0.1'].includes(url.hostname);
+    if (
+      (url.protocol !== 'https:' && !(local && url.protocol === 'http:')) ||
+      url.username ||
+      url.password ||
+      url.pathname !== '/verificar-email' ||
+      url.search ||
+      url.hash
+    )
+      throw new Error();
+    return { url: url.href, handleCodeInApp: false };
+  } catch {
+    throw new Error(
+      'Configure VITE_AUTH_CONTINUE_URL com a URL autorizada terminada em /verificar-email.',
+    );
+  }
+}

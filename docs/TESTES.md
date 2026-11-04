@@ -1,5 +1,29 @@
 # Relatório de verificação — EcoDescarte
 
+## Feature de verificação de e-mail — 04/11/2026
+
+Validação local na branch `feature/email-verification`. Baseline de `main` (`33e0ea9`) reconstruído em diretório temporário: build aprovado e 74 testes unitários aprovados. O aviso de bundle Firestore acima de 500 kB já existia no baseline.
+
+| Verificação | Resultado | Evidência |
+| --- | --- | --- |
+| Build TypeScript/Vite | Aprovado | Tipagem de aplicação, configurações e testes; bundle gerado |
+| Unitários | 87 aprovados | Inclui falhas parciais de cadastro, perfil idempotente, token antigo, mudança de sessão, retorno seguro, configuração do link e demo antigo |
+| Regras Firestore | 12 aprovados | Token ausente/falso/verdadeiro, perfil inicial pendente, administração confirmada e agregados atômicos |
+| Integração Auth/Firestore | 1 aprovado | Cadastro pendente, reenvio, consumo de código, renovação do token, recuperação de senha por tipo de ação e contribuição/admin após confirmação |
+| Navegador público/demo | 24 aprovados | Fluxos existentes, acessibilidade e retorno ao descarte após login direto |
+| Navegador Firebase emulado | 3 aprovados | Cadastro pendente e retorno com parâmetros; falha de envio/reenvio e consulta ao voltar à aba; falha Firestore preservando a sessão e acessibilidade móvel |
+| Falhas de configuração/Maps | 2 aprovados | Configuração incompleta recuperável e mapa indisponível com lista preservada |
+
+Total: **129 testes aprovados**, em execuções próprias de cada suíte. A integração é ignorada por `npm test` quando os emuladores não estão ativos e foi executada separadamente; não contar esse skip como aprovação adicional. Não houve seed remoto ou teste contra dados de produção.
+
+Ambiente efetivamente utilizado: Windows, Node 20.19.6, pnpm 9.15.4 com `--ignore-workspace`, dependências do lockfile, OpenJDK 25.0.1 para emuladores e Chrome instalado com `PLAYWRIGHT_CHANNEL=chrome`. A instalação utilizou o espelho Yarn do registro npm com as versões e integridades originais, devido a timeout de rede em registry.npmjs.org. Isso registra o ambiente desta execução; não altera os pré-requisitos gerais do projeto.
+
+O teste de navegador detectou uma leitura de perfil ausente em cache após criação por transação. A leitura passou a usar `getDocFromServer`; os cenários de reenvio e confirmação passaram depois da correção. A tela continua disponível quando essa leitura falha.
+
+Comando adicional: `npm run test:e2e:firebase`, com emuladores locais e Vite na porta 5178. Nenhuma regra nova foi publicada durante esta validação. A entrega real de mensagens e a prévia remota devem ser registradas separadamente após homologação; não são comprovadas pelos emuladores.
+
+## Relatório histórico — 02/10/2026
+
 Validação local realizada em **2 de outubro de 2026**. Os dados utilizados são artificiais. Nenhum projeto Firebase de produção ou serviço de e-mail real foi usado.
 
 ## Resultado

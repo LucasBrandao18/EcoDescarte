@@ -536,7 +536,11 @@ Autor cria e lê suas sugestões; administrador lê e analisa. Autor não edita/
 
 ## Autenticação e autorização
 
-Cadastro cria conta de e-mail/senha no Authentication, perfil `users/{uid}` como `user` e nome de exibição. Formulário exige senha de pelo menos oito caracteres e confirmação. Login usa `signInWithEmailAndPassword`, logout `signOut`, recuperação `sendPasswordResetEmail`. Não há login Google, verificação obrigatória de e-mail ou gerenciamento de múltiplos fatores.
+Cadastro cria conta de e-mail/senha no Authentication, perfil `users/{uid}` como `user`, nome de exibição e solicita o envio de verificação. Formulário exige senha de pelo menos oito caracteres e confirmação. Login usa `signInWithEmailAndPassword`, logout `signOut`, recuperação `sendPasswordResetEmail`. Não há login Google ou gerenciamento de múltiplos fatores.
+
+No Firebase, contas pendentes abrem `/verificar-email`: podem consultar perfil/histórico, reenviar e-mail e conferir a confirmação. Contribuições, edição do perfil e administração exigem e-mail confirmado; administração exige também `admin=true`. O catálogo e o mapa permanecem públicos. A regra vale para contas antigas e novas. O link é processado pelo handler padrão do Firebase; a aplicação renova o token após confirmação manual ou ao voltar à aba, sem consultas periódicas. Falha no envio preserva a conta criada e permite reenvio. No demo, não há envio nem confirmação real.
+
+Configure `VITE_AUTH_CONTINUE_URL` antes de cadastrar contas Firebase. Consulte o [roteiro de configuração, prévia e ativação em fases](docs/VERIFICACAO_EMAIL.md) antes de publicar as regras novas.
 
 Páginas pessoais exigem autenticação; administração redireciona visitantes e recusa usuários sem perfil administrativo. Login pode preservar a rota pretendida. Proteção de navegação complementa as regras do banco.
 
@@ -600,6 +604,7 @@ VITE_FIREBASE_APP_ID=
 VITE_GOOGLE_MAPS_API_KEY=
 VITE_DATA_MODE=auto
 VITE_USE_EMULATORS=false
+VITE_AUTH_CONTINUE_URL=
 ```
 
 | Variável                            | Finalidade                                                                           |
@@ -613,6 +618,7 @@ VITE_USE_EMULATORS=false
 | `VITE_GOOGLE_MAPS_API_KEY`          | Chave de navegador Maps; sem ela, lista e rotas externas continuam disponíveis       |
 | `VITE_DATA_MODE`                    | `auto` por padrão; `demo` força dados locais; `firebase` exige configuração completa |
 | `VITE_USE_EMULATORS`                | Somente `true` conecta Auth/Firestore locais; padrão `false`                         |
+| `VITE_AUTH_CONTINUE_URL`            | URL HTTPS autorizada terminada em `/verificar-email`; necessária para cadastro e reenvio Firebase. HTTP aceito somente em localhost/127.0.0.1 |
 
 Em `auto`, qualquer configuração Firebase presente faz o sistema exigir as quatro variáveis obrigatórias. Configuração parcial e modo inválido geram erro.
 
@@ -666,6 +672,7 @@ VITE_FIREBASE_API_KEY=demo-key-only
 VITE_FIREBASE_AUTH_DOMAIN=demo-ecodescarte.firebaseapp.com
 VITE_FIREBASE_PROJECT_ID=demo-ecodescarte
 VITE_FIREBASE_APP_ID=1:123:web:demo
+VITE_AUTH_CONTINUE_URL=http://127.0.0.1:5173/verificar-email
 VITE_FIREBASE_STORAGE_BUCKET=
 VITE_FIREBASE_MESSAGING_SENDER_ID=
 VITE_GOOGLE_MAPS_API_KEY=
@@ -828,6 +835,7 @@ Na raiz do projeto, após instalar dependências:
 | `npm run test:failures`          | Maps indisponível e configuração Firebase incompleta; servidores 5176/5177                                                          |
 | `npm run test:rules`             | Firestore emulado e testes de regras; exige Java                                                                                    |
 | `npm run test:firebase`          | Auth/Firestore emulados e teste integrado                                                                                           |
+| `npm run test:e2e:firebase`      | Fluxos de verificação no navegador com Auth/Firestore emulados e Vite isolado na porta 5178                                         |
 | `npx tsc --noEmit`               | Verificação de tipos sem gerar a aplicação                                                                                          |
 | `npm run build`                  | `tsc -b` seguido de `vite build`                                                                                                    |
 | `npx prettier --check README.md` | Conferência deste documento                                                                                                         |
@@ -872,7 +880,7 @@ Há cenários em **375, 768, 1024 e 1440 pixels**. Axe-core avalia 17 páginas c
 
 ### Esta revisão documental — 17/10/2026
 
-Foram conferidos código, scripts, versões, rotas, modelos, regras, variáveis exemplificadas, imagens, referências e links internos. A formatação do README e a preservação dos demais arquivos foram verificadas localmente. **Não foram executados novos testes funcionais, emuladores, build, seed ou deploy nesta tarefa.** Os resultados acima são históricos, não certificação do ambiente atual ou remoto.
+Os resultados históricos acima são mantidos como referência da revisão anterior. Os testes executados para a feature de verificação de e-mail em 04/11/2026 estão registrados em [docs/TESTES.md](docs/TESTES.md). A validação local não comprova entrega de e-mail real ou implantação remota.
 
 <a id="build"></a>
 
