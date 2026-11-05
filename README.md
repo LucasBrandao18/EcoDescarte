@@ -934,7 +934,7 @@ npx firebase deploy --only "hosting,firestore:rules,firestore:indexes" --project
 
 Após mudar frontend/ambiente, revise e teste localmente, gere **novo build**, publique Hosting e confira a URL retornada, inclusive uma rota direta como `/pontos`. Atualize domínios autorizados do Authentication e restrições Maps para o domínio final. Hosting sozinho não publica regras/índices. Alterar somente dados pelo painel não exige build.
 
-Nenhuma URL pública oficial foi confirmada nesta revisão. Pasta `.firebase` e configurações locais não foram tomadas como prova de deploy atual.
+O [site principal do EcoDescarte](https://ecodescarte-af76d.web.app) recebeu a feature de verificação de e-mail em 05/11/2026. Hosting e regras foram publicados em fases e conferidos no ambiente remoto. Consulte o [registro de implantação](docs/VERIFICACAO_EMAIL.md#registro-de-produção--05112026) e os [resultados de validação](docs/TESTES.md).
 
 <a id="seguranca"></a>
 

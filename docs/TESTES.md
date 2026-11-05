@@ -32,6 +32,17 @@ Comando adicional: `npm run test:e2e:firebase`, com emuladores locais e Vite na 
 - Canal principal permaneceu na versão `6d6a8fda264e560d`, conferida antes e depois da publicação. Somente o Hosting da prévia foi publicado; regras restritivas e Fases A/B não foram ativadas no site principal.
 - Homologação manual de entrega real aprovada em 04/11/2026: o responsável informou no chat que recebeu o e-mail, confirmou o endereço e conseguiu acessar o perfil pela prévia. Essa evidência foi fornecida pelo responsável e complementa os 129 testes automatizados; não implica validação de reenvio real, todas as caixas postais ou ativação das regras de produção.
 
+## Publicação em produção — 05/11/2026
+
+- Autorização expressa do responsável para publicar com um administrador ativo já confirmado; estado e claim conferidos no Auth. O administrador pendente continuará podendo entrar e reenviar a confirmação, mas precisa confirmá-la para acessar o painel.
+- Feature integrada em `main` por fast-forward. Build de produção aprovado com retorno de e-mail para o site principal, emuladores desativados e configuração anterior de Maps preservada.
+- Fase A concluída: Hosting `5fc3a8d4f4d8620e`, fluxo público conferido e regras antigas preservadas até concluir essa conferência.
+- Fase B concluída: ruleset ativo `19ea1097-b0e8-4495-bf94-094f6a0f146c` corresponde exatamente ao arquivo testado do repositório. Hash SHA-256 da fonte com quebras normalizadas: `3eebe78325d8db19a7af5772b89b0437a3651100ef150cb483c97ee02a7a7e69`.
+- Smoke test no domínio principal antes e depois da ativação das regras: cadastro/verificação acessíveis, 12 pontos públicos, configuração de Maps disponível, redirecionamento da contribuição anônima para login, nenhum erro JavaScript e nenhuma escrita remota do teste.
+- Domínio principal autorizado no Auth e provedor Email/Password ativo. Verificação final das versões em 05/11/2026 às 14h15 (America/Sao_Paulo).
+- Os 129 testes automatizados previamente aprovados não foram repetidos apenas para o deploy; não houve mudança de implementação desde a homologação. O build de produção e a conferência remota foram executados nesta etapa. O recebimento real de e-mail foi confirmado pelo responsável na prévia; não foi disparado novo e-mail pelo smoke test de produção.
+- Backup anterior registrado para reversão: Hosting `6d6a8fda264e560d` e ruleset `d2ace6ed-6a46-47d0-bc53-5e7e30f911f1`.
+
 ## Relatório histórico — 02/10/2026
 
 Validação local realizada em **2 de outubro de 2026**. Os dados utilizados são artificiais. Nenhum projeto Firebase de produção ou serviço de e-mail real foi usado.

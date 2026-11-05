@@ -70,7 +70,7 @@ Não alterar o handler ou template global apenas para personalizar a prévia. A 
 
 ## Ativação em duas fases
 
-Antes de publicar a interface que bloqueia administradores pendentes, confirmar o e-mail das contas administrativas existentes e conferir sua claim. Usar o processo administrativo existente para recuperação; não promover usuários pelo navegador nem marcar todos os e-mails como confirmados.
+Antes de publicar a interface que bloqueia administradores pendentes, confirmar que pelo menos um administrador ativo possui e-mail verificado e a claim administrativa. Em 05/11/2026, o responsável autorizou seguir com uma conta administrativa confirmada; as demais deverão confirmar o endereço antes do próximo acesso ao painel. A exigência de verificação continua valendo para todos os administradores. Usar o processo administrativo existente para recuperação; não promover usuários pelo navegador nem marcar os e-mails como confirmados artificialmente.
 
 **Fase A — disponibilizar recuperação:** publicar a interface, envio e caminho de confirmação no site principal, mantendo as regras anteriores temporariamente. Interface e serviços cliente já bloqueiam ações pendentes, mas nessa fase a exigência ainda não está garantida contra chamadas diretas ao Firestore. Orientar contas antigas sobre a confirmação e testar o caminho de recuperação no site principal.
 
@@ -98,3 +98,17 @@ Build e emuladores não comprovam entrega real de mensagens. A homologação e a
 - Cadastro e página de verificação foram conferidos pelo agente no navegador anônimo sem gravações remotas. Em teste manual separado, em 04/11/2026, o responsável confirmou no chat que recebeu o e-mail, confirmou o endereço e conseguiu acessar o perfil pela prévia. A entrega real está homologada nesse cenário; reenvio real e ativação das regras no site principal não foram exercitados nessa confirmação.
 
 A prévia pode ser usada para esse teste manual antes das Fases A/B. Não ativar as regras nem fazer merge/deploy principal como consequência automática do teste da prévia.
+
+## Registro de produção — 05/11/2026
+
+A publicação em produção foi autorizada expressamente no chat, incluindo a decisão de seguir com um administrador ativo e verificado. O estado dessa conta foi conferido no Auth antes do rollout; a outra conta administrativa permanece sujeita à confirmação para acessar o painel.
+
+1. A branch `feature/email-verification` foi integrada em `main` por fast-forward, chegando ao commit `5fb606e` antes da implantação.
+2. O build de produção foi gerado com emuladores desativados, retorno `https://ecodescarte-af76d.web.app/verificar-email` e a mesma configuração pública de Maps do site anterior. O build passou.
+3. Fase A: somente Hosting publicado, versão `5fc3a8d4f4d8620e`. Cadastro, página de verificação, catálogo e navegação protegida passaram na conferência do navegador. As regras anteriores foram conferidas como ainda ativas nessa fase.
+4. Fase B: somente `firestore:rules` publicado, ruleset `19ea1097-b0e8-4495-bf94-094f6a0f146c`. A leitura do ruleset ativo confirmou correspondência exata com o arquivo do repositório validado nos testes.
+5. Conferência final em 05/11/2026 às 14h15 (America/Sao_Paulo): 12 pontos públicos carregados, configuração de Maps preservada, rotas de cadastro/verificação acessíveis, contribuição anônima redirecionada para login, sem erros JavaScript e sem gravações remotas pelo smoke test.
+
+[Site principal](https://ecodescarte-af76d.web.app) com a feature ativa. Os 129 testes automatizados e o teste manual de recebimento/consumo de e-mail na prévia compõem a validação anterior ao rollout; a conferência de produção foi separada e não criou conteúdo artificial no banco.
+
+Referências para reversão: Hosting anterior `6d6a8fda264e560d`; ruleset anterior `d2ace6ed-6a46-47d0-bc53-5e7e30f911f1`. Os metadados e a fonte anterior das regras foram salvos localmente em `tmp/production-2026-11-05/`, ignorado pelo Git. Considerar as duas camadas em conjunto se for necessário reverter.
