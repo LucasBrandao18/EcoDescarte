@@ -30,7 +30,7 @@ Comando adicional: `npm run test:e2e:firebase`, com emuladores locais e Vite na 
 - Configuração Auth conferida por leitura: Email/Password ativo, domínio da prévia autorizado e handler padrão `https://ecodescarte-af76d.firebaseapp.com/__/auth/action` preservado.
 - Smoke test no Chrome anônimo: cadastro e rota `/verificar-email` acessíveis, sem erros JavaScript e sem criar contas ou gravar documentos de teste.
 - Canal principal permaneceu na versão `6d6a8fda264e560d`, conferida antes e depois da publicação. Somente o Hosting da prévia foi publicado; regras restritivas e Fases A/B não foram ativadas no site principal.
-- Recebimento de e-mail real e confirmação por caixa postal: pendentes do teste manual do responsável. Não declarar esses itens aprovados com base no smoke test.
+- Homologação manual de entrega real aprovada em 04/11/2026: o responsável informou no chat que recebeu o e-mail, confirmou o endereço e conseguiu acessar o perfil pela prévia. Essa evidência foi fornecida pelo responsável e complementa os 129 testes automatizados; não implica validação de reenvio real, todas as caixas postais ou ativação das regras de produção.
 
 ## Relatório histórico — 02/10/2026
 

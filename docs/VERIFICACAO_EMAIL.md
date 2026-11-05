@@ -95,6 +95,6 @@ Build e emuladores não comprovam entrega real de mensagens. A homologação e a
 - O build usa `.env.preview.local`, ignorado pelo Git, com a configuração web pública do projeto e `VITE_AUTH_CONTINUE_URL` apontando a `/verificar-email` na própria prévia. Emuladores estão desativados.
 - A CLI autorizou o domínio da prévia no Auth. O handler padrão foi preservado. Nenhuma regra Firestore foi publicada.
 - A leitura da configuração Auth confirmou Email/Password ativo, domínio da prévia autorizado e handler `https://ecodescarte-af76d.firebaseapp.com/__/auth/action`.
-- Cadastro e página de verificação foram conferidos no navegador anônimo sem gravações remotas. Recebimento e consumo de e-mail real ainda dependem do teste com caixa postal controlada pelo responsável.
+- Cadastro e página de verificação foram conferidos pelo agente no navegador anônimo sem gravações remotas. Em teste manual separado, em 04/11/2026, o responsável confirmou no chat que recebeu o e-mail, confirmou o endereço e conseguiu acessar o perfil pela prévia. A entrega real está homologada nesse cenário; reenvio real e ativação das regras no site principal não foram exercitados nessa confirmação.
 
 A prévia pode ser usada para esse teste manual antes das Fases A/B. Não ativar as regras nem fazer merge/deploy principal como consequência automática do teste da prévia.
